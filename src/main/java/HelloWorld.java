@@ -7,10 +7,10 @@
 public class HelloWorld {
 
     public static void main(String[] args) {
-        ImageUtil util = new ImageUtil();
+        ImgUtil util = new ImgUtil();
         String templateDir = "C:/Users/Administrator/Downloads/template/";
 //        util.createTemplate(templateDir);
-        util.compare("C:/Users/Administrator/Downloads/test.png", templateDir);
+        util.compare("C:/Users/Administrator/Downloads/test2.png", templateDir);
     }
 
 }

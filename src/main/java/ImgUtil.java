@@ -5,13 +5,16 @@ import org.opencv.core.Size;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- * ImageUtil
+ * ImgUtil
  *
  * @author chenhuihua
  * @date 2019/5/7
  */
-public class ImageUtil {
+public class ImgUtil {
 
     /**
      * 切割后的图片
@@ -19,13 +22,15 @@ public class ImageUtil {
     private Mat leftImg, rightImg;
 
     /**
-     * 与模板相减后的图片
+     * 模板集
      */
-    private Mat diffImage = new Mat();
+    private List<Mat> templateImgList;
 
     static {
-        // 本地安装opencv
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
+    }
+
+    public ImgUtil() {
     }
 
     /**
@@ -87,9 +92,8 @@ public class ImageUtil {
      * @param src
      */
     private void cutTop(Mat src) {
-        int top, bottom;
-        top = 0;
-        bottom = src.rows();
+        int top = 0;
+        int bottom = src.rows();
         int i;
         for (i = 0; i < src.rows(); i++) {
             int colValue = this.getRowPxSum(src, i);
@@ -114,14 +118,25 @@ public class ImageUtil {
      * 数字识别
      *
      * @param filename
-     * @param template
+     * @param templateDir
      */
-    public void compare(String filename, String template) {
+    public void compare(String filename, String templateDir) {
         Mat src = Imgcodecs.imread(filename, Imgcodecs.IMREAD_GRAYSCALE);
         Imgproc.threshold(src, src, 100, 255, Imgproc.THRESH_BINARY_INV);
+        Size size = new Size(32, 48);
+        Mat diffImg = new Mat();
+        // 初始化模板0-9
+        if (templateImgList == null) {
+            templateImgList = new ArrayList<>();
+            for (int i = 0; i < 10; i++) {
+                Mat templateImg = Imgcodecs.imread(templateDir + i + ".jpg", Imgcodecs.IMREAD_GRAYSCALE);
+                Imgproc.resize(templateImg, templateImg, size, 0, 0, Imgproc.INTER_LINEAR);
+                templateImgList.add(templateImg);
+            }
+        }
         int res = this.cutLeft(src);
         while (res == 0) {
-            this.getSubtract(template);
+            this.getSubtract(size, diffImg);
             res = this.cutLeft(rightImg);
         }
     }
@@ -129,21 +144,20 @@ public class ImageUtil {
     /**
      * 与模板相减
      *
-     * @param template
+     * @param size
+     * @param diffImg
      */
-    private void getSubtract(String template) {
+    private void getSubtract(Size size, Mat diffImg) {
         Integer min = null, result = null;
-        Size size = new Size(32, 48);
-        // 遍历模板0-9
-        for (int i = 0; i < 10; i++) {
-            Mat temp = Imgcodecs.imread(template + i + ".jpg", Imgcodecs.IMREAD_GRAYSCALE);
-            Imgproc.resize(temp, temp, size, 0, 0, Imgproc.INTER_LINEAR);
+        // 遍历模板
+        for (int i = 0; i < templateImgList.size(); i++) {
             Imgproc.resize(leftImg, leftImg, size, 0, 0, Imgproc.INTER_LINEAR);
-            Core.absdiff(temp, leftImg, diffImage);
-            int diff = this.getPxSum(diffImage);
+            Core.absdiff(templateImgList.get(i), leftImg, diffImg);
+            int diff = this.getPxSum(diffImg);
             if (min == null || diff < min) {
                 min = diff;
                 result = i;
+                System.out.println("min="+min+",i="+i);
             }
         }
         System.out.println(result);
