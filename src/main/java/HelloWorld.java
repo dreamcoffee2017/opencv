@@ -1,3 +1,5 @@
+import org.opencv.imgproc.Imgproc;
+
 /**
  * HelloWorld
  *
@@ -10,7 +12,7 @@ public class HelloWorld {
         ImgUtil util = new ImgUtil();
         String templateDir = "C:/Users/Administrator/Downloads/template/";
 //        util.createTemplate(templateDir);
-        util.compare("C:/Users/Administrator/Downloads/test2.png", templateDir);
+        util.compare("C:/Users/Administrator/Downloads/test.png", templateDir);
     }
 
 }

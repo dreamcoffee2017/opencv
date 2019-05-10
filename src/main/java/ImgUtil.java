@@ -148,35 +148,14 @@ public class ImgUtil {
      * @param diffImg
      */
     private void getSubtract(Size size, Mat diffImg) {
-        Integer min = null, result = null;
         // 遍历模板
         for (int i = 0; i < templateImgList.size(); i++) {
             Imgproc.resize(leftImg, leftImg, size, 0, 0, Imgproc.INTER_LINEAR);
-            Core.absdiff(templateImgList.get(i), leftImg, diffImg);
-            int diff = this.getPxSum(diffImg);
-            if (min == null || diff < min) {
-                min = diff;
-                result = i;
-                System.out.println("min="+min+",i="+i);
+            Imgproc.matchTemplate(leftImg, templateImgList.get(i), diffImg, Imgproc.TM_CCOEFF_NORMED);
+            if (Core.minMaxLoc(diffImg).maxVal > 0.99) {
+                System.out.println(i);
             }
         }
-        System.out.println(result);
-    }
-
-    /**
-     * 像素点求和
-     *
-     * @param src
-     * @return
-     */
-    private int getPxSum(Mat src) {
-        int result = 0;
-        for (int i = 0; i < src.rows(); i++) {
-            for (int j = 0; j < src.cols(); j++) {
-                result += src.get(i, j)[0];
-            }
-        }
-        return result;
     }
 
     /**
