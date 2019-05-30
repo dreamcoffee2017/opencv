@@ -1,13 +1,16 @@
 package com.dreamcoffee.opencv.util;
 
-import org.opencv.core.Core;
-import org.opencv.core.Mat;
-import org.opencv.core.Rect;
-import org.opencv.core.Size;
+import org.opencv.core.*;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 import org.springframework.util.Assert;
 
+import java.awt.*;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
+import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferByte;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -204,4 +207,40 @@ public class ImgUtil {
         return result;
     }
 
+    /**
+     * 从剪切板获得图片
+     *
+     * @return
+     * @throws Exception
+     */
+    public static BufferedImage getImgFromClip() throws Exception {
+        Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+        Transferable transferable = clipboard.getContents(null);
+        if (transferable != null && transferable.isDataFlavorSupported(DataFlavor.imageFlavor)) {
+            return (BufferedImage) transferable.getTransferData(DataFlavor.imageFlavor);
+        }
+        return null;
+    }
+
+    /**
+     * 缓存图片转mat
+     *
+     * @param sourceImg
+     * @return
+     */
+    public static Mat imgToMat(BufferedImage sourceImg) {
+        int w = sourceImg.getWidth();
+        int h = sourceImg.getHeight();
+        BufferedImage targetImg;
+        if (sourceImg.getType() != BufferedImage.TYPE_3BYTE_BGR) {
+            targetImg = new BufferedImage(w, h, BufferedImage.TYPE_3BYTE_BGR);
+            targetImg.setData(sourceImg.getData());
+        } else {
+            targetImg = sourceImg;
+        }
+        byte[] pixels = ((DataBufferByte) targetImg.getRaster().getDataBuffer()).getData();
+        Mat mat = new Mat(h, w, CvType.CV_8UC3);
+        mat.put(0, 0, pixels);
+        return mat;
+    }
 }

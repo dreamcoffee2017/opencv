@@ -1,6 +1,8 @@
 package com.dreamcoffee.opencv.task;
 
 import com.dreamcoffee.opencv.util.ImgUtil;
+import org.opencv.core.Mat;
+import org.opencv.highgui.HighGui;
 import org.opencv.imgproc.Imgproc;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -8,6 +10,7 @@ import org.springframework.stereotype.Component;
 import java.awt.*;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+import java.awt.image.BufferedImage;
 
 /**
  * ScheduledTasks
@@ -19,7 +22,16 @@ import java.awt.event.KeyEvent;
 public class ScheduledTasks {
 
     @Scheduled(cron = "0/5 * * * * *")
-    public void printScreen() throws AWTException {
+    public void printScreen() throws Exception {
+        if (1 == 1) {
+            BufferedImage bufImg = ImgUtil.getImgFromClip();
+            if (bufImg != null) {
+                Mat mat = ImgUtil.imgToMat(bufImg);
+                HighGui.imshow("", mat);
+                HighGui.waitKey();
+            }
+            return;
+        }
         // 搜索，xy
         // 截图
         Robot robot = new Robot();
