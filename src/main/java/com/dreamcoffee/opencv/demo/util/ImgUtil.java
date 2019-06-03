@@ -1,4 +1,4 @@
-package com.dreamcoffee.opencv.util;
+package com.dreamcoffee.opencv.demo.util;
 
 import org.opencv.core.*;
 import org.opencv.imgcodecs.Imgcodecs;

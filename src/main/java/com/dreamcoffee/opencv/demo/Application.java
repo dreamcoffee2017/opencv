@@ -1,4 +1,4 @@
-package com.dreamcoffee.opencv;
+package com.dreamcoffee.opencv.demo;
 
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;

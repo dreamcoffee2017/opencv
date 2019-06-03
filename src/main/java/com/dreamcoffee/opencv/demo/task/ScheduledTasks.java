@@ -1,6 +1,6 @@
-package com.dreamcoffee.opencv.task;
+package com.dreamcoffee.opencv.demo.task;
 
-import com.dreamcoffee.opencv.util.ImgUtil;
+import com.dreamcoffee.opencv.demo.util.ImgUtil;
 import org.opencv.core.Mat;
 import org.opencv.highgui.HighGui;
 import org.opencv.imgproc.Imgproc;
