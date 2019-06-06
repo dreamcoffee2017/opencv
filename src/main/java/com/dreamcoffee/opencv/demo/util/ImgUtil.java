@@ -4,15 +4,15 @@ import org.opencv.core.*;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
-import java.awt.*;
-import java.awt.datatransfer.Clipboard;
-import java.awt.datatransfer.DataFlavor;
-import java.awt.datatransfer.Transferable;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * ImgUtil
@@ -29,9 +29,13 @@ public class ImgUtil {
     private static Mat rightImg;
 
     /**
-     * 模板集
+     * 模板
      */
-    private static List<Mat> templateImgList;
+    private static final String TEMP = "template";
+    private static final String IMG_SUF = ".jpg";
+    private static final int THRESH_TYPE = Imgproc.THRESH_BINARY;
+    private static String tempDir;
+    private static List<Mat> tempImgList;
 
     static {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
@@ -40,16 +44,13 @@ public class ImgUtil {
     /**
      * 数字识别
      *
-     * @param filename
-     * @param templateDir
-     * @param binaryType
+     * @param bufImg
      */
-    public static int compare(String filename, String templateDir, int binaryType) {
-        Mat src = Imgcodecs.imread(filename, Imgcodecs.IMREAD_GRAYSCALE);
-        Assert.isTrue(!src.empty(), filename + "不存在");
-        Imgproc.threshold(src, src, 100, 255, binaryType);
-        if (templateImgList == null) {
-            initTemplate(templateDir, binaryType);
+    public static Integer compare(BufferedImage bufImg) {
+        Mat src = imgToMat(bufImg);
+        Imgproc.threshold(src, src, 100, 255, THRESH_TYPE);
+        if (CollectionUtils.isEmpty(tempImgList)) {
+            initTemplate();
         }
         int res = cutLeft(src);
         Size size = new Size(32, 48);
@@ -57,8 +58,8 @@ public class ImgUtil {
         StringBuilder result = new StringBuilder();
         while (res == 0) {
             Imgproc.resize(leftImg, leftImg, size, 0, 0, Imgproc.INTER_LINEAR);
-            for (int i = 0; i < templateImgList.size(); i++) {
-                Imgproc.matchTemplate(leftImg, templateImgList.get(i), resultImg, Imgproc.TM_CCOEFF_NORMED);
+            for (int i = 0; i < tempImgList.size(); i++) {
+                Imgproc.matchTemplate(leftImg, tempImgList.get(i), resultImg, Imgproc.TM_CCOEFF_NORMED);
                 if (Core.minMaxLoc(resultImg).maxVal > 0.99) {
                     result.append(i);
                     break;
@@ -66,49 +67,47 @@ public class ImgUtil {
             }
             res = cutLeft(rightImg);
         }
-        return Integer.parseInt(result.toString());
+        return StringUtils.isEmpty(result.toString()) ? null : Integer.parseInt(result.toString());
     }
 
     /**
      * 初始化模板0-9
-     *
-     * @param templateDir
-     * @param binaryType
      */
-    private static void initTemplate(String templateDir, int binaryType) {
+    private static void initTemplate() {
+        tempDir = Objects.requireNonNull(ImgUtil.class.getClassLoader().getResource(TEMP)).getPath().replaceFirst("/", "") + File.separator;
         int length = 10;
         boolean needCreate = false;
-        templateImgList = new ArrayList<>();
+        tempImgList = new ArrayList<>();
         for (int i = 0; i < length; i++) {
-            Mat templateImg = Imgcodecs.imread(templateDir + i + ".jpg", Imgcodecs.IMREAD_GRAYSCALE);
-            if (templateImg.empty()) {
+            Mat tempImg = Imgcodecs.imread(tempDir + i + IMG_SUF, Imgcodecs.IMREAD_GRAYSCALE);
+            if (tempImg.empty()) {
                 needCreate = true;
                 break;
             }
-            templateImgList.add(templateImg);
+            tempImgList.add(tempImg);
         }
         if (needCreate) {
-            createTemplate(templateDir, binaryType);
-            initTemplate(templateDir, binaryType);
+            createTemplate();
+            initTemplate();
         }
     }
 
     /**
      * 创建模板
-     *
-     * @param templateDir
-     * @param binaryType
      */
-    private static void createTemplate(String templateDir, int binaryType) {
-        Mat src = Imgcodecs.imread(templateDir + "template.jpg", Imgcodecs.IMREAD_GRAYSCALE);
-        Assert.isTrue(!src.empty(), "template.jpg不存在");
-        Imgproc.threshold(src, src, 100, 255, binaryType);
+    private static void createTemplate() {
+        String temp = tempDir + TEMP + IMG_SUF;
+        Mat src = Imgcodecs.imread(temp, Imgcodecs.IMREAD_GRAYSCALE);
+        Assert.isTrue(!src.empty(), temp + "不存在");
+        Imgproc.threshold(src, src, 100, 255, THRESH_TYPE);
         int res = cutLeft(src);
         Size size = new Size(32, 48);
         int i = 0;
         while (res == 0) {
             Imgproc.resize(leftImg, leftImg, size, 0, 0, Imgproc.INTER_LINEAR);
-            Imgcodecs.imwrite(templateDir + i++ + ".jpg", leftImg);
+            String filename = tempDir + i++ + IMG_SUF;
+            Imgcodecs.imwrite(filename, leftImg);
+            System.out.println("初始化模板" + filename);
             res = cutLeft(rightImg);
         }
     }
@@ -208,21 +207,6 @@ public class ImgUtil {
     }
 
     /**
-     * 从剪切板获得图片
-     *
-     * @return
-     * @throws Exception
-     */
-    public static BufferedImage getImgFromClip() throws Exception {
-        Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-        Transferable transferable = clipboard.getContents(null);
-        if (transferable != null && transferable.isDataFlavorSupported(DataFlavor.imageFlavor)) {
-            return (BufferedImage) transferable.getTransferData(DataFlavor.imageFlavor);
-        }
-        return null;
-    }
-
-    /**
      * 缓存图片转mat
      *
      * @param sourceImg
@@ -238,9 +222,10 @@ public class ImgUtil {
         } else {
             targetImg = sourceImg;
         }
-        byte[] pixels = ((DataBufferByte) targetImg.getRaster().getDataBuffer()).getData();
-        Mat mat = new Mat(h, w, CvType.CV_8UC3);
-        mat.put(0, 0, pixels);
-        return mat;
+        byte[] data = ((DataBufferByte) targetImg.getRaster().getDataBuffer()).getData();
+        Mat result = new Mat(h, w, CvType.CV_8UC3);
+        result.put(0, 0, data);
+        Imgproc.cvtColor(result, result, Imgproc.COLOR_RGB2GRAY);
+        return result;
     }
 }
