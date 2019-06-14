@@ -2,7 +2,10 @@ package com.dreamcoffee.opencv.demo;
 
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.context.annotation.Bean;
 import org.springframework.scheduling.annotation.EnableScheduling;
+
+import java.awt.*;
 
 /**
  * Application
@@ -21,4 +24,8 @@ public class Application {
                 .run();
     }
 
+    @Bean
+    public Robot robot() throws AWTException {
+        return new Robot();
+    }
 }
