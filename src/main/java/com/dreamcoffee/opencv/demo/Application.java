@@ -18,12 +18,17 @@ import java.awt.*;
 public class Application {
 
     public static void main(String[] args) {
-        new SpringApplicationBuilder()
-                .sources(Application.class)
+        new SpringApplicationBuilder(Application.class)
                 .headless(false)
                 .run();
     }
 
+    /**
+     * 模拟操作需要headless=false
+     *
+     * @return
+     * @throws AWTException
+     */
     @Bean
     public Robot robot() throws AWTException {
         return new Robot();
