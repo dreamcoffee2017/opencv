@@ -24,9 +24,23 @@ public interface AuctionService {
     void close();
 
     /**
-     * 买
+     * 刷新
      */
-    void buy();
+    void refresh();
+
+    /**
+     * 查询价格
+     *
+     * @return
+     */
+    int getPrice();
+
+    /**
+     * 买
+     *
+     * @param price
+     */
+    void buy(int price);
 
     /**
      * 卖
