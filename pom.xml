@@ -27,7 +27,7 @@
             <artifactId>opencv</artifactId>
             <version>4.1.0</version>
             <scope>system</scope>
-            <systemPath>D:/work/opencv/build/java/opencv-410.jar</systemPath>
+            <systemPath>${basedir}/lib/opencv-410.jar</systemPath>
         </dependency>
 
         <dependency>

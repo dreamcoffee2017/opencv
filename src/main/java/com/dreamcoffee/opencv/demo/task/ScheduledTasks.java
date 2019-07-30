@@ -2,6 +2,8 @@ package com.dreamcoffee.opencv.demo.task;
 
 import com.dreamcoffee.opencv.demo.service.AuctionService;
 import com.dreamcoffee.opencv.demo.util.ImgUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -19,6 +21,8 @@ import java.awt.image.BufferedImage;
 @Component
 public class ScheduledTasks {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(ScheduledTasks.class);
+
     @Autowired
     private Robot robot;
     @Autowired
@@ -31,7 +35,7 @@ public class ScheduledTasks {
         BufferedImage bufImg = robot.createScreenCapture(new Rectangle(182, 355, 107, 13));
         // 识别第一组数据，xy
         Integer result = ImgUtil.compare(bufImg);
-        System.out.println(result);
+        LOGGER.info("比对结果 {}", result);
         if (result == null) {
             return;
         }

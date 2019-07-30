@@ -1,5 +1,7 @@
 package com.dreamcoffee.opencv.demo;
 
+import com.dreamcoffee.opencv.demo.util.ImgUtil;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.annotation.Bean;
@@ -32,5 +34,10 @@ public class Application {
     @Bean
     public Robot robot() throws AWTException {
         return new Robot();
+    }
+
+    @Bean
+    public CommandLineRunner run() {
+        return args -> ImgUtil.initTemplate();
     }
 }

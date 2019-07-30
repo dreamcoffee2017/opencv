@@ -3,16 +3,19 @@ package com.dreamcoffee.opencv.demo.util;
 import org.opencv.core.*;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.util.Assert;
-import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
+import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * ImgUtil
@@ -21,6 +24,8 @@ import java.util.Objects;
  * @date 2019/5/7
  */
 public class ImgUtil {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ImgUtil.class);
 
     /**
      * 切割后的图片
@@ -31,10 +36,10 @@ public class ImgUtil {
     /**
      * 模板
      */
-    private static final String TEMP = "template";
+    private static final String TEMP = "template/template.jpg";
+    private static final String TEMP_DIR = "tmp/";
     private static final String IMG_SUF = ".jpg";
     private static final int THRESH_TYPE = Imgproc.THRESH_BINARY;
-    private static String tempDir;
     private static List<Mat> tempImgList;
 
     static {
@@ -49,9 +54,6 @@ public class ImgUtil {
     public static Integer compare(BufferedImage bufImg) {
         Mat src = imgToMat(bufImg);
         Imgproc.threshold(src, src, 100, 255, THRESH_TYPE);
-        if (CollectionUtils.isEmpty(tempImgList)) {
-            initTemplate();
-        }
         int res = cutLeft(src);
         Size size = new Size(32, 48);
         Mat resultImg = new Mat();
@@ -73,13 +75,13 @@ public class ImgUtil {
     /**
      * 初始化模板0-9
      */
-    private static void initTemplate() {
-        tempDir = Objects.requireNonNull(ImgUtil.class.getClassLoader().getResource(TEMP)).getPath().replaceFirst("/", "") + File.separator;
+    public static void initTemplate() throws IOException {
         int length = 10;
         boolean needCreate = false;
         tempImgList = new ArrayList<>();
         for (int i = 0; i < length; i++) {
-            Mat tempImg = Imgcodecs.imread(tempDir + i + IMG_SUF, Imgcodecs.IMREAD_GRAYSCALE);
+            String filename = TEMP_DIR + i + IMG_SUF;
+            Mat tempImg = Imgcodecs.imread(filename, Imgcodecs.IMREAD_GRAYSCALE);
             if (tempImg.empty()) {
                 needCreate = true;
                 break;
@@ -95,19 +97,27 @@ public class ImgUtil {
     /**
      * 创建模板
      */
-    private static void createTemplate() {
-        String temp = tempDir + TEMP + IMG_SUF;
-        Mat src = Imgcodecs.imread(temp, Imgcodecs.IMREAD_GRAYSCALE);
-        Assert.isTrue(!src.empty(), temp + "不存在");
+    private static void createTemplate() throws IOException {
+        File file = new File(TEMP_DIR);
+        if (!file.exists()) {
+            Assert.isTrue(file.mkdir(), "模板目录创建失败");
+        }
+        BufferedImage bufferedImage;
+        try (InputStream is = ImgUtil.class.getClassLoader().getResourceAsStream(TEMP)) {
+            Assert.notNull(is, "模板不存在！");
+            bufferedImage = ImageIO.read(is);
+        }
+        Assert.notNull(bufferedImage, "模板格式错误");
+        Mat src = imgToMat(bufferedImage);
         Imgproc.threshold(src, src, 100, 255, THRESH_TYPE);
         int res = cutLeft(src);
         Size size = new Size(32, 48);
         int i = 0;
         while (res == 0) {
             Imgproc.resize(leftImg, leftImg, size, 0, 0, Imgproc.INTER_LINEAR);
-            String filename = tempDir + i++ + IMG_SUF;
+            String filename = TEMP_DIR + i++ + IMG_SUF;
             Imgcodecs.imwrite(filename, leftImg);
-            System.out.println("初始化模板" + filename);
+            LOGGER.info("初始化模板" + filename);
             res = cutLeft(rightImg);
         }
     }
@@ -212,7 +222,7 @@ public class ImgUtil {
      * @param sourceImg
      * @return
      */
-    public static Mat imgToMat(BufferedImage sourceImg) {
+    private static Mat imgToMat(BufferedImage sourceImg) {
         int w = sourceImg.getWidth();
         int h = sourceImg.getHeight();
         BufferedImage targetImg;
