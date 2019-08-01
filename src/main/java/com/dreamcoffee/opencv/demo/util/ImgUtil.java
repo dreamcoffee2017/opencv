@@ -104,7 +104,7 @@ public class ImgUtil {
         }
         BufferedImage bufferedImage;
         try (InputStream is = ImgUtil.class.getClassLoader().getResourceAsStream(TEMP)) {
-            Assert.notNull(is, "模板不存在！");
+            Assert.notNull(is, "模板不存在");
             bufferedImage = ImageIO.read(is);
         }
         Assert.notNull(bufferedImage, "模板格式错误");
@@ -226,16 +226,19 @@ public class ImgUtil {
         int w = sourceImg.getWidth();
         int h = sourceImg.getHeight();
         BufferedImage targetImg;
+        // robot.createScreenCapture TYPE_INT_RGB
         if (sourceImg.getType() != BufferedImage.TYPE_3BYTE_BGR) {
             targetImg = new BufferedImage(w, h, BufferedImage.TYPE_3BYTE_BGR);
             targetImg.setData(sourceImg.getData());
         } else {
+            // ImageIO.read TYPE_3BYTE_BGR
             targetImg = sourceImg;
         }
         byte[] data = ((DataBufferByte) targetImg.getRaster().getDataBuffer()).getData();
+        // Imgcodecs.imread CV_8UC3
         Mat result = new Mat(h, w, CvType.CV_8UC3);
         result.put(0, 0, data);
-        Imgproc.cvtColor(result, result, Imgproc.COLOR_RGB2GRAY);
+        Imgproc.cvtColor(result, result, Imgproc.COLOR_BGR2GRAY);
         return result;
     }
 }
